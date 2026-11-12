@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GitHub Explorer — Portfolio Project</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Sora:wght@600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0d1117; --surface:#161b22; --surface2:#1c2129; --border:#30363d;
+    --text:#e6edf3; --muted:#8b949e; --accent:#3fb950; --blue:#58a6ff;
+    --radius:14px; --ease:cubic-bezier(.16,1,.3,1);
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    background:var(--bg); color:var(--text);
+    font-family:'Inter',system-ui,sans-serif; line-height:1.6;
+    min-height:100vh; -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3{font-family:'Sora',sans-serif; letter-spacing:-.02em; line-height:1.2}
+  a{color:var(--blue); text-decoration:none}
+  a:hover{text-decoration:underline}
+  .wrap{width:min(960px,92vw); margin-inline:auto}
+
+  /* ---------- header ---------- */
+  header{padding:56px 0 28px; text-align:center}
+  .badge{
+    display:inline-flex; align-items:center; gap:.5rem;
+    font-size:.72rem; letter-spacing:.12em; text-transform:uppercase;
+    color:var(--accent); border:1px solid rgba(63,185,80,.3);
+    background:rgba(63,185,80,.08); border-radius:100px;
+    padding:.35rem .9rem; margin-bottom:1.2rem;
+  }
+  header h1{font-size:clamp(1.9rem,4.5vw,2.8rem); margin-bottom:.8rem}
+  header p{color:var(--muted); max-width:54ch; margin-inline:auto; font-size:.98rem}
+
+  /* ---------- search ---------- */
+  form.search{
+    display:flex; gap:.6rem; max-width:580px; margin:2rem auto 1rem;
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:100px; padding:.4rem .4rem .4rem 1.2rem;
+    transition:border-color .3s, box-shadow .3s;
+  }
+  form.search:focus-within{
+    border-color:var(--accent); box-shadow:0 0 0 3px rgba(63,185,80,.15);
+  }
+  form.search input{
+    flex:1; background:transparent; border:0; outline:0;
+    color:var(--text); font-size:1rem; font-family:inherit; min-width:0;
+  }
+  form.search input::placeholder{color:var(--muted)}
+  form.search button{
+    background:var(--accent); color:#0d1117; border:0;
+    padding:.7rem 1.4rem; border-radius:100px;
+    font-weight:600; font-size:.9rem; cursor:pointer; font-family:inherit;
+    transition:transform .25s var(--ease), filter .25s; white-space:nowrap;
+  }
+  form.search button:hover{filter:brightness(1.1); transform:translateY(-1px)}
+  form.search button:disabled{opacity:.5; cursor:not-allowed; transform:none}
+
+  /* ---------- recent chips ---------- */
+  .recent{
+    display:flex; flex-wrap:wrap; gap:.5rem; justify-content:center;
+    min-height:34px; margin-bottom:2.2rem;
+  }
+  .chip{
+    font-size:.8rem; padding:.35rem .85rem;
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:100px; color:var(--muted); cursor:pointer;
+    transition:all .25s var(--ease); font-family:inherit;
+    display:inline-flex; align-items:center; gap:.3rem;
+  }
+  .chip:hover{color:var(--accent); border-color:rgba(63,185,80,.4)}
+  .chip .x{opacity:.5; font-size:.75rem}
+  .chip .x:hover{opacity:1; color:#f85149}
+
+  /* ---------- results ---------- */
+  #result{min-height:180px}
+  .card{
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:var(--radius); padding:1.5rem; margin-bottom:1.2rem;
+    animation:rise .6s var(--ease) both;
+  }
+  @keyframes rise{from{opacity:0; transform:translateY(16px)} to{opacity:1; transform:none}}
+
+  /* profile */
+  .profile{display:flex; gap:1.4rem; align-items:flex-start; flex-wrap:wrap}
+  .avatar{
+    width:88px; height:88px; border-radius:50%;
+    border:2px solid var(--border); background:var(--surface2); flex-shrink:0;
+  }
+  .profile-info{flex:1; min-width:200px}
+  .profile-info h2{font-size:1.4rem; margin-bottom:.1rem}
+  .profile-info .login{color:var(--muted); font-size:.95rem}
+  .bio{color:var(--muted); font-size:.92rem; margin-top:.7rem; max-width:60ch}
+  .meta{display:flex; flex-wrap:wrap; gap:.4rem 1rem; margin-top:1rem; font-size:.85rem; color:var(--muted)}
+  .meta span{display:inline-flex; align-items:center; gap:.35rem}
+
+  /* stats */
+  .stats{display:grid; grid-template-columns:repeat(4,1fr); gap:.8rem; margin-top:1.4rem}
+  @media(max-width:560px){.stats{grid-template-columns:repeat(2,1fr)}}
+  .stat{
+    background:var(--surface2); border-radius:10px; padding:.9rem 1rem;
+    border:1px solid var(--border);
+  }
+  .stat .num{font-family:'Sora',sans-serif; font-size:1.3rem; font-weight:700}
+  .stat .lbl{font-size:.72rem; color:var(--muted); text-transform:uppercase; letter-spacing:.06em}
+
+  /* languages */
+  .lang-bar{
+    display:flex; height:14px; border-radius:100px; overflow:hidden;
+    background:var(--surface2); margin-bottom:1rem;
+  }
+  .lang-bar > div{height:100%; min-width:2px; transition:flex-grow .6s var(--ease)}
+  .legend{display:flex; flex-wrap:wrap; gap:.6rem 1.4rem; font-size:.85rem}
+  .legend span{display:flex; align-items:center; gap:.45rem; color:var(--muted)}
+  .legend i{width:10px; height:10px; border-radius:50%; display:inline-block; flex-shrink:0}
+
+  /* repos */
+  .repos{display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:.9rem}
+  .repo{
+    background:var(--surface2); border:1px solid var(--border);
+    border-radius:10px; padding:1.1rem;
+    display:flex; flex-direction:column; gap:.5rem;
+    transition:border-color .3s, transform .3s var(--ease);
+    text-decoration:none;
+  }
+  .repo:hover{border-color:rgba(63,185,80,.4); transform:translateY(-3px); text-decoration:none}
+  .repo h3{font-size:.98rem; font-weight:600; color:var(--blue)}
+  .repo p{color:var(--muted); font-size:.85rem; flex:1}
+  .repo .repo-meta{display:flex; gap:1rem; font-size:.78rem; color:var(--muted)}
+  .repo .repo-meta span{display:inline-flex; align-items:center; gap:.3rem}
+  .lang-dot{width:9px; height:9px; border-radius:50%; display:inline-block}
+
+  /* skeleton + states */
+  .skeleton{animation:pulse 1.4s ease-in-out infinite}
+  @keyframes pulse{0%,100%{opacity:.4} 50%{opacity:.8}}
+  .sk-line{height:14px; border-radius:6px; background:var(--surface2); margin-bottom:.7rem}
+  .sk-line.w40{width:40%} .sk-line.w60{width:60%} .sk-line.w80{width:80%}
+  .sk-circle{width:88px; height:88px; border-radius:50%; background:var(--surface2); flex-shrink:0}
+
+  .empty{text-align:center; padding:2rem 1rem; color:var(--muted)}
+  .empty .big{font-size:2rem; margin-bottom:.5rem; opacity:.4}
+  .error{
+    border:1px solid rgba(248,81,73,.4); background:rgba(248,81,73,.08);
+    color:#f85149; border-radius:var(--radius);
+    padding:1.2rem 1.4rem; font-size:.92rem;
+    animation:rise .5s var(--ease) both;
+  }
+  .error strong{display:block; margin-bottom:.2rem; color:#ff7b72}
+
+  footer{border-top:1px solid var(--border); padding:1.5rem 0; margin-top:3rem; text-align:center; font-size:.8rem; color:var(--muted)}
+  footer code{background:var(--surface); padding:.15rem .4rem; border-radius:5px; font-size:.78rem}
+</style>
+</head>
+<body>
+
+<header class="wrap">
+  <div class="badge">Portfolio Project · REST API · Caching</div>
+  <h1>GitHub Explorer</h1>
+  <p>Search any GitHub user to explore their profile, language mix, and top repositories — fetched live from the GitHub REST API.</p>
+</header>
+
+<main class="wrap">
+  <form class="search" id="form" autocomplete="off">
+    <input id="input" type="text" placeholder="Enter a GitHub username…  (press /)" aria-label="GitHub username" maxlength="39">
+    <button type="submit" id="btn">Search</button>
+  </form>
+  <div class="recent" id="recent"></div>
+  <div id="result" aria-live="polite"></div>
+</main>
+
+<footer>
+  <div class="wrap">
+    Data from GitHub's public REST API. Results cached for 10 minutes to respect rate limits.
+  </div>
+</footer>
+
+<script>
+/* ============================================================
+   1. Helpers
+   ============================================================ */
+const $ = s => document.querySelector(s);
+const result  = $('#result');
+const form    = $('#form');
+const input   = $('#input');
+const btn     = $('#btn');
+const recentEl = $('#recent');
+
+const CACHE_TTL   = 10 * 60 * 1000; // 10 minutes
+const RECENT_KEY  = 'gh-explorer-recent';
+const MAX_RECENT  = 5;
+
+// GitHub language colors (subset — extend as needed)
+const LANG_COLORS = {
+  JavaScript:'#f1e05a', TypeScript:'#3178c6', HTML:'#e34c26', CSS:'#563d7c',
+  Python:'#3572A5', Java:'#b07219', 'C++':'#f34b7d', 'C#':'#178600',
+  Ruby:'#701516', Go:'#00ADD8', Rust:'#dea584', PHP:'#4F5D95',
+  Swift:'#F05138', Kotlin:'#A97BFF', Dart:'#00B4AB', Shell:'#89e051',
+  Vue:'#41b883', Svelte:'#ff3e00', 'Jupyter Notebook':'#DA5B0B',
+  SCSS:'#c6538c', Less:'#1d365d', Lua:'#000080', Haskell:'#5e5086'
+};
+
+// Escape user-controlled strings before injecting into HTML
+const esc = s => String(s ?? '').replace(/[&<>"']/g,
+  c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+// 1234 -> "1.2k"
+const fmt = n => n >= 1000 ? (n / 1000).toFixed(1).replace(/\.0$/, '') + 'k' : String(n);
+
+// GitHub username rules: 1-39 chars, alphanumeric or hyphen, no leading/trailing hyphen
+const validUsername = u => /^[a-z\d](?:[a-z\d]|-(?=[a-z\d])){0,38}$/i.test(u);
+
+/* ============================================================
+   2. localStorage cache  (big deal — avoids rate limits)
+   ============================================================ */
+const cacheKey = u => 'gh-explorer:' + u.toLowerCase();
+
+function getCache(username) {
+  try {
+    const raw = localStorage.getItem(cacheKey(username));
+    if (!raw) return null;
+    const { ts, data } = JSON.parse(raw);
+    if (Date.now() - ts > CACHE_TTL) return null; // expired
+    return data;
+  } catch { return null; }
+}
+
+function setCache(username, data) {
+  try {
+    localStorage.setItem(cacheKey(username), JSON.stringify({ ts: Date.now(), data }));
+  } catch { /* storage full / private mode — fail silently */ }
+}
+
+/* ============================================================
+   3. GitHub API wrapper  (centralized error handling)
+   ============================================================ */
+async function api(path) {
+  const res = await fetch('https://api.github.com' + path, {
+    headers: { 'Accept': 'application/vnd.github+json' }
+  });
+
+  if (res.status === 404) throw new Error('NOT_FOUND');
+
+  // 403 with 0 remaining = rate limited
+  if (res.status === 403 && res.headers.get('x-ratelimit-remaining') === '0') {
+    throw new Error('RATE_LIMIT');
+  }
+
+  if (!res.ok) throw new Error('HTTP_' + res.status);
+  return res.json();
+}
+
+/* ============================================================
+   4. Data transformation  (repos -> language percentages)
+   ============================================================ */
+function langStats(repos) {
+  const counts = {};
+  let total = 0;
+  for (const r of repos) {
+    if (r.fork) continue;              // ignore forks
+    if (r.language) { counts[r.language] = (counts[r.language] || 0) + 1; total++; }
+  }
+  if (!total) return [];
+  return Object.entries(counts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 8)
+    .map(([name, count]) => ({ name, pct: (count / total) * 100 }));
+}
+
+/* ============================================================
+   5. Recent searches
+   ============================================================ */
+function getRecent() {
+  try { return JSON.parse(localStorage.getItem(RECENT_KEY)) || []; }
+  catch { return []; }
+}
+function addRecent(username) {
+  const list = getRecent().filter(x => x.toLowerCase() !== username.toLowerCase());
+  list.unshift(username);
+  localStorage.setItem(RECENT_KEY, JSON.stringify(list.slice(0, MAX_RECENT)));
+  renderRecent();
+}
+function removeRecent(username) {
+  localStorage.setItem(RECENT_KEY,
+    JSON.stringify(getRecent().filter(x => x !== username)));
+  renderRecent();
+}
+function renderRecent() {
+  const list = getRecent();
+  if (!list.length) {
+    recentEl.innerHTML = ['torvalds', 'gaearon', 'sindresorhus']
+      .map(u => `<button class="chip" data-user="${esc(u)}">Try ${esc(u)}</button>`)
+      .join('');
+    return;
+  }
+  recentEl.innerHTML = list.map(u => `
+    <button class="chip" data-user="${esc(u)}">
+      ${esc(u)}<span class="x" data-remove="${esc(u)}">✕</span>
+    </button>`).join('');
+}
+
+/* ============================================================
+   6. Rendering
+   ============================================================ */
+function showSkeleton() {
+  result.innerHTML = `
+    <div class="card skeleton">
+      <div style="display:flex;gap:1.4rem;align-items:center">
+        <div class="sk-circle"></div>
+        <div style="flex:1">
+          <div class="sk-line w40"></div>
+          <div class="sk-line w60"></div>
+        </div>
+      </div>
+      <div style="margin-top:1.5rem">
+        <div class="sk-line"></div>
+        <div class="sk-line w80"></div>
+      </div>
+    </div>
+    <div class="card skeleton">
+      <div class="sk-line"></div><div class="sk-line w60"></div>
+    </div>`;
+}
+
+function showEmpty() {
+  result.innerHTML = `
+    <div class="empty">
+      <div class="big">⌘</div>
+      <p>Search a GitHub username above to see their profile, languages, and top repos.</p>
+    </div>`;
+}
+
+function showError(kind) {
+  const map = {
+    NOT_FOUND:  ['User not found', "That username doesn't exist on GitHub. Double-check the spelling and try again."],
+    RATE_LIMIT: ['Rate limit reached', 'The unauthenticated GitHub API allows 60 requests/hour. Wait a bit, or attach a personal token in the fetch headers.'],
+    INVALID:    ['Invalid username', 'GitHub usernames use letters, numbers and hyphens only (max 39 chars).'],
+  };
+  const [title, msg] = map[kind] || ['Something went wrong', 'Could not reach the GitHub API. Check your connection and try again.'];
+  result.innerHTML = `<div class="error"><strong>${title}</strong>${msg}</div>`;
+}
+
+function render({ user, repos }) {
+  const langs      = langStats(repos);
+  const totalStars = repos.reduce((s, r) => s + r.stargazers_count, 0);
+  const top = repos
+    .filter(r => !r.fork && !r.archived)
+    .sort((a, b) => b.stargazers_count - a.stargazers_count)
+    .slice(0, 6);
+
+  /* --- language bar + legend --- */
+  const barHtml = langs.length
+    ? langs.map(l => `<div style="flex:${l.pct};background:${LANG_COLORS[l.name] || '#8b949e'}"
+        title="${esc(l.name)} ${l.pct.toFixed(0)}%"></div>`).join('')
+    : `<div style="flex:1;background:var(--surface2)"></div>`;
+
+  const legendHtml = langs.map(l => `
+    <span>
+      <i style="background:${LANG_COLORS[l.name] || '#8b949e'}"></i>
+      ${esc(l.name)} <span style="opacity:.6">${l.pct.toFixed(0)}%</span>
+    </span>`).join('');
+
+  /* --- repo cards --- */
+  const reposHtml = top.length ? top.map(r => `
+    <a class="repo" href="${esc(r.html_url)}" target="_blank" rel="noopener">
+      <h3>${esc(r.name)}</h3>
+      <p>${r.description ? esc(r.description) : '&nbsp;'}</p>
+      <div class="repo-meta">
+        ${r.language ? `<span><i class="lang-dot" style="background:${LANG_COLORS[r.language] || '#8b949e'}"></i>${esc(r.language)}</span>` : ''}
+        <span>★ ${fmt(r.stargazers_count)}</span>
+        <span>⑂ ${fmt(r.forks_count)}</span>
+      </div>
+    </a>`).join('')
+    : '<p style="color:var(--muted)">No public repositories found.</p>';
+
+  /* --- profile card --- */
+  const blogUrl = user.blog
+    ? (user.blog.startsWith('http') ? user.blog : 'https://' + user.blog)
+    : null;
+
+  result.innerHTML = `
+    <div class="card">
+      <div class="profile">
+        <img class="avatar" src="${esc(user.avatar_url)}" alt="${esc(user.login)} avatar" loading="lazy">
+        <div class="profile-info">
+          <h2>${esc(user.name || user.login)}</h2>
+          <div class="login">@${esc(user.login)}</div>
+          ${user.bio ? `<p class="bio">${esc(user.bio)}</p>` : ''}
+          <div class="meta">
+            ${user.location ? `<span>📍 ${esc(user.location)}</span>` : ''}
+            ${user.company  ? `<span>🏢 ${esc(user.company)}</span>` : ''}
+            ${blogUrl ? `<span>🔗 <a href="${esc(blogUrl)}" target="_blank" rel="noopener">${esc(user.blog)}</a></span>` : ''}
+            <span>📅 Joined ${new Date(user.created_at).getFullYear()}</span>
+          </div>
+        </div>
+      </div>
+      <div class="stats">
+        <div class="stat"><div class="num">${fmt(user.public_repos)}</div><div class="lbl">Repos</div></div>
+        <div class="stat"><div class="num">${fmt(totalStars)}</div><div class="lbl">Total Stars</div></div>
+        <div class="stat"><div class="num">${fmt(user.followers)}</div><div class="lbl">Followers</div></div>
+        <div class="stat"><div class="num">${fmt(user.following)}</div><div class="lbl">Following</div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3 style="font-size:1.05rem;margin-bottom:1rem">Language mix</h3>
+      <div class="lang-bar">${barHtml}</div>
+      <div class="legend">${legendHtml || '<span>No language data</span>'}</div>
+    </div>
+
+    <div class="card">
+      <h3 style="font-size:1.05rem;margin-bottom:1rem">Top repositories</h3>
+      <div class="repos">${reposHtml}</div>
+    </div>`;
+}
+
+/* ============================================================
+   7. Main loader  (with stale-request protection)
+   ============================================================ */
+let reqId = 0;
+
+async function loadProfile(raw) {
+  const username = raw.trim();
+  if (!username) return;
+  if (!validUsername(username)) return showError('INVALID');
+
+  const id = ++reqId;            // every new search invalidates older ones
+  input.value = username;
+  btn.disabled = true;
+  btn.textContent = 'Searching…';
+
+  // 1) cache hit
+  const cached = getCache(username);
+  if (cached) {
+    if (id === reqId) render(cached);
+    addRecent(username);
+    finish(id);
+    return;
+  }
+
+  // 2) network
+  showSkeleton();
+  try {
+    const [user, repos] = await Promise.all([
+      api(`/users/${username}`),
+      api(`/users/${username}/repos?per_page=100&sort=updated`)
+    ]);
+    if (id !== reqId) return;    // a newer search started — drop this result
+    const data = { user, repos };
+    setCache(username, data);
+    render(data);
+    addRecent(username);
+  } catch (err) {
+    if (id !== reqId) return;
+    showError(err.message);
+  } finally {
+    finish(id);
+  }
+}
+
+function finish(id) {
+  if (id !== reqId) return;
+  btn.disabled = false;
+  btn.textContent = 'Search';
+}
+
+/* ============================================================
+   8. Events
+   ============================================================ */
+form.addEventListener('submit', e => {
+  e.preventDefault();
+  loadProfile(input.value);
+});
+
+recentEl.addEventListener('click', e => {
+  const rm = e.target.closest('[data-remove]');
+  if (rm) { removeRecent(rm.dataset.remove); return; }
+  const chip = e.target.closest('[data-user]');
+  if (chip) loadProfile(chip.dataset.user);
+});
+
+// "/" focuses search from anywhere
+document.addEventListener('keydown', e => {
+  if (e.key === '/' && document.activeElement !== input) {
+    e.preventDefault();
+    input.focus();
+  }
+});
+
+/* ============================================================
+   9. Init
+   ============================================================ */
+renderRecent();
+showEmpty();
+</script>
+</body>
+</html>
